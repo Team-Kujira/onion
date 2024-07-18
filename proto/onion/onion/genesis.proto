@@ -1,0 +1,17 @@
+syntax = "proto3";
+package onion.onion;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "onion/onion/params.proto";
+
+option go_package = "onion/x/onion/types";
+
+// GenesisState defines the onion module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
