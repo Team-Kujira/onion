@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-    "cosmossdk.io/core/appmodule"
-    "cosmossdk.io/core/store"
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -17,14 +18,14 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	
+	"github.com/spf13/cobra"
 
 	// this line is used by starport scaffolding # 1
 
 	modulev1 "onion/api/onion/onion/module"
+	"onion/x/onion/client/cli"
 	"onion/x/onion/keeper"
 	"onion/x/onion/types"
-	
 )
 
 var (
@@ -37,7 +38,6 @@ var (
 	_ appmodule.AppModule       = (*AppModule)(nil)
 	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
 	_ appmodule.HasEndBlocker   = (*AppModule)(nil)
-	
 )
 
 // ----------------------------------------------------------------------------
@@ -90,7 +90,10 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	}
 }
 
-
+// GetTxCmd returns no root tx command for the ibc-hooks module.
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return cli.NewTxCmd()
+}
 
 // ----------------------------------------------------------------------------
 // AppModule
@@ -100,14 +103,14 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
+	keeper        *keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	keeper keeper.Keeper,
+	keeper *keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 ) AppModule {
@@ -121,8 +124,8 @@ func NewAppModule(
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-    types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-    types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -134,12 +137,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.keeper, genState)
+	am.keeper.InitGenesis(ctx, genState)
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.keeper)
+	genState := am.keeper.ExportGenesis(ctx)
 	return cdc.MustMarshalJSON(genState)
 }
 
@@ -172,7 +175,7 @@ func (am AppModule) IsAppModule() {}
 
 func init() {
 	appmodule.Register(
-	    &modulev1.Module{},
+		&modulev1.Module{},
 		appmodule.Provide(ProvideModule),
 	)
 }
@@ -188,14 +191,15 @@ type ModuleInputs struct {
 	AccountKeeper types.AccountKeeper
 	BankKeeper    types.BankKeeper
 
-    
+	Router   *baseapp.MsgServiceRouter
+	TxConfig client.TxConfig
 }
 
 type ModuleOutputs struct {
 	depinject.Out
 
-	OnionKeeper keeper.Keeper
-	Module appmodule.AppModule
+	OnionKeeper *keeper.Keeper
+	Module      appmodule.AppModule
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
@@ -205,16 +209,19 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
 	k := keeper.NewKeeper(
-	    in.Cdc,
+		in.Cdc,
 		in.StoreService,
-	    in.Logger,
-	    authority.String(), 
+		in.Logger,
+		authority.String(),
+		in.Router,
+		in.AccountKeeper,
+		in.TxConfig.SignModeHandler(),
 	)
 	m := NewAppModule(
-	    in.Cdc,
-	    k,
-	    in.AccountKeeper,
-	    in.BankKeeper,
+		in.Cdc,
+		k,
+		in.AccountKeeper,
+		in.BankKeeper,
 	)
 
 	return ModuleOutputs{OnionKeeper: k, Module: m}

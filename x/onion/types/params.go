@@ -1,41 +1,33 @@
 package types
 
 import (
-	
-
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
+// Parameter store keys.
+var (
+	_ paramtypes.ParamSet = &Params{}
+)
 
-
-
-// ParamKeyTable the param key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+	return paramtypes.NewKeyTable()
 }
 
-// NewParams creates a new Params instance
-func NewParams(
-) Params {
-	return Params{
-	}
+func NewParams() Params {
+	return Params{}
 }
 
-// DefaultParams returns a default set of parameters
+// DefaultParams returns default concentrated-liquidity module parameters.
 func DefaultParams() Params {
-	return NewParams(
-	)
+	return Params{}
 }
 
-// ParamSetPairs get the params.ParamSet
+// ParamSetPairs implements params.ParamSet.
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-	}
+	return paramtypes.ParamSetPairs{}
 }
 
-// Validate validates the set of params
+// Validate params.
 func (p Params) Validate() error {
 	return nil
 }
-

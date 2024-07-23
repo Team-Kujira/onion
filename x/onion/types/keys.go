@@ -1,24 +1,19 @@
 package types
 
 const (
-	// ModuleName defines the module name
 	ModuleName = "onion"
+	RouterKey  = ModuleName
+	StoreKey   = ModuleName
 
-	// StoreKey defines the primary module store key
-	StoreKey = ModuleName
-
-	// MemStoreKey defines the in-memory store key
-	MemStoreKey = "mem_onion"
-
-    
+	OnionSequencePrefix = "onion-sequence"
 )
 
 var (
 	ParamsKey = []byte("p_onion")
 )
 
-
-
 func KeyPrefix(p string) []byte {
-    return []byte(p)
+	return []byte(p)
 }
+
+const AccountNumber = ^uint64(0)

@@ -4,8 +4,8 @@ package onion.onion;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "onion/onion/params.proto";
+import "onion/onion/genesis.proto";
 
 option go_package = "onion/x/onion/types";
 
@@ -15,6 +15,14 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/onion/onion/params";
   }
+  rpc Sequence(QuerySequenceRequest) returns (QuerySequenceResponse) {
+    option (google.api.http).get = "/onion/onion/sequence/{address}";
+  }
+}
+
+message QuerySequenceRequest { string address = 1; }
+message QuerySequenceResponse {
+  OnionSequence seq = 1 [ (gogoproto.nullable) = false ];
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.

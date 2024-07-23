@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-    keepertest "onion/testutil/keeper"
-    "onion/x/onion/types"
-    "onion/x/onion/keeper"
+	keepertest "onion/testutil/keeper"
+	"onion/x/onion/keeper"
+	"onion/x/onion/types"
 )
 
-func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
+func setupMsgServer(t testing.TB) (*keeper.Keeper, types.MsgServer, context.Context) {
 	k, ctx := keepertest.OnionKeeper(t)
 	return k, keeper.NewMsgServerImpl(k), ctx
 }

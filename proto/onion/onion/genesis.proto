@@ -3,15 +3,17 @@ package onion.onion;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 import "onion/onion/params.proto";
 
 option go_package = "onion/x/onion/types";
 
-// GenesisState defines the onion module's genesis state.
 message GenesisState {
-  // params defines all the parameters of the module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+    Params params = 1 [ (gogoproto.nullable) = false ];
+    repeated OnionSequence sequences = 2 [ (gogoproto.nullable) = false ];
+}
+
+message OnionSequence {
+    string address = 1;
+    uint64 sequence = 2;
 }
